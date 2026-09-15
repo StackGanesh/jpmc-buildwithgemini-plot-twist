@@ -2,7 +2,8 @@
 import re
 import uuid
 import io
-from PIL import Image, ImageDraw
+import os
+from PIL import Image, ImageDraw, ImageFont
 from google.cloud import storage
 from google.adk.tools.tool_context import ToolContext
 
@@ -11,14 +12,27 @@ PROJECT_ID = "qwiklabs-gcp-02-41b7e175b609"
 
 
 def _generate_poster_image(title_text: str) -> bytes:
-    """Generates a high-quality 800x1200 cinematic concept poster image with Pillow."""
+    """Generates a high-quality 800x1200 cinematic concept poster image with large bold typography using Pillow."""
     width, height = 800, 1200
     img = Image.new("RGB", (width, height), color=(15, 12, 28))
     draw = ImageDraw.Draw(img)
 
     clean_title = re.sub(r"[^a-zA-Z0-9\s]", "", title_text).strip().upper()
-    if not clean_title or len(clean_title) > 30:
-        clean_title = "CINEMATIC CONCEPT"
+    if not clean_title or len(clean_title) > 25:
+        clean_title = "DUNE"
+
+    # Load high-resolution bold TrueType fonts
+    font_path_bold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    font_path_reg = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+
+    try:
+        font_title = ImageFont.truetype(font_path_bold, 86)
+        font_header = ImageFont.truetype(font_path_bold, 30)
+        font_footer = ImageFont.truetype(font_path_reg, 24)
+    except Exception:
+        font_title = ImageFont.load_default(size=72)
+        font_header = ImageFont.load_default(size=28)
+        font_footer = ImageFont.load_default(size=22)
 
     # Deep space to desert sunset gradient
     for y in range(height):
@@ -36,14 +50,13 @@ def _generate_poster_image(title_text: str) -> bytes:
             b = int(90 * (1 - sub_ratio) + 30 * sub_ratio)
         draw.line([(0, y), (width, y)], fill=(r, g, b))
 
-    # Giant glowing sun/celestial orb in upper third
-    sun_center = (400, 420)
-    for radius in range(180, 0, -2):
-        alpha = int(255 * (1 - radius / 180))
-        gold_val = int(220 + 35 * (1 - radius / 180))
+    # Giant glowing sun/celestial orb in center
+    sun_center = (400, 480)
+    for radius in range(220, 0, -2):
+        gold_val = int(220 + 35 * (1 - radius / 220))
         draw.ellipse(
             [sun_center[0] - radius, sun_center[1] - radius, sun_center[0] + radius, sun_center[1] + radius],
-            fill=(gold_val, int(150 + 50 * (1 - radius / 180)), 40)
+            fill=(gold_val, int(150 + 50 * (1 - radius / 220)), 40)
         )
 
     # Desert dunes / dramatic geometric silhouettes
@@ -52,15 +65,22 @@ def _generate_poster_image(title_text: str) -> bytes:
     draw.polygon([(0, 1200), (420, 850), (800, 1200)], fill=(20, 10, 15))
 
     # Top header text
-    draw.text((width // 2, 120), "A PLOT TWIST ORIGINAL CONCEPT", fill=(220, 210, 240), anchor="mm")
-    draw.text((width // 2, 150), "— CONCEPT ARTWORK SERIES —", fill=(180, 150, 110), anchor="mm")
+    draw.text((width // 2, 110), "A PLOT TWIST ORIGINAL CONCEPT", fill=(240, 230, 255), font=font_header, anchor="mm")
+    draw.text((width // 2, 150), "— CONCEPT ARTWORK SERIES —", fill=(255, 200, 120), font=font_footer, anchor="mm")
 
-    # Main Title text
-    draw.text((width // 2, 240), clean_title, fill=(255, 245, 230), anchor="mm")
+    # Main Title text with thick dark drop shadow for maximum visibility
+    shadow_offset = 4
+    for dx in range(-shadow_offset, shadow_offset + 1):
+        for dy in range(-shadow_offset, shadow_offset + 1):
+            if dx != 0 or dy != 0:
+                draw.text((width // 2 + dx, 270 + dy), clean_title, fill=(10, 5, 15), font=font_title, anchor="mm")
 
-    # Subtitle credits footer
-    draw.text((width // 2, 1080), "DIRECTED BY CINEMATIC AI • VISUAL STORYTELLING", fill=(230, 210, 180), anchor="mm")
-    draw.text((width // 2, 1120), "PLOTTWIST CONCIERGE • ALL RIGHTS RESERVED", fill=(170, 150, 130), anchor="mm")
+    # Crisp bright title text in foreground
+    draw.text((width // 2, 270), clean_title, fill=(255, 250, 235), font=font_title, anchor="mm")
+
+    # Subtitle credits footer with high contrast
+    draw.text((width // 2, 1080), "DIRECTED BY CINEMATIC AI • VISUAL STORYTELLING", fill=(255, 235, 200), font=font_footer, anchor="mm")
+    draw.text((width // 2, 1120), "PLOTTWIST CONCIERGE • ALL RIGHTS RESERVED", fill=(220, 200, 170), font=font_footer, anchor="mm")
 
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=95)
