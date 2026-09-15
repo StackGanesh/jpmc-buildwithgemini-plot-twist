@@ -82,13 +82,13 @@ async def record():
         await page.evaluate("window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })")
         await asyncio.sleep(5)
 
-        # Prompt 3: Concept Poster Generation for Dune (Multimodal Image Tool Call & A2UI Card)
-        print("Executing Prompt 3: Dune Concept Poster...")
+        # Prompt 3: Concept Poster Generation for Interstellar (Multimodal Image Tool Call & A2UI Card)
+        print("Executing Prompt 3: Interstellar Concept Poster...")
         poster_btn = page.locator("button.example-btn:has-text('Generate Concept Poster')")
         if await poster_btn.count() > 0:
             await poster_btn.click()
         else:
-            await page.fill("#input", "Generate a movie poster concept for Dune")
+            await page.fill("#input", "Generate a movie poster concept for Interstellar")
             await page.click("button:has-text('Send')")
 
         # Wait & Validate Prompt 3 (Verify generated poster image inside A2UI card)
