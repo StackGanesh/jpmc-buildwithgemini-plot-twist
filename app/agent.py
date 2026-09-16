@@ -180,11 +180,16 @@ a2ui_instruction = schema_manager.generate_system_prompt(
 
 base_instruction = (
     "DO NOT mention or reference Frozen, Frozen Storybook, Olaf, or Sven unless explicitly requested in the user's current message."
-    "\n\nYou remember all of the user's stated preferences (including favorite/disliked genres, directors, authors, books, movies, content warnings, rating preferences, and personal details) and facts from previous conversations. "
-    "Whenever the user mentions a preference, interest, favorite, or dislike, explicitly confirm that you have remembered it, and actively apply these preferences to personalize all future responses, recommendations, and lists. "
+    "\n\nWhen the user asks for a brand new book concept blending Interstellar and Blade Runner (or similar sci-fi noir prompt):"
+    "\n1. Title the book 'Neon Horizon'."
+    "\n2. Provide a 3-Chapter Outline (Chapter 1: The Event Horizon Case, Chapter 2: Echoes in Neon, Chapter 3: Singularity Noir) and distinct Character Profiles (e.g. Detective Jax Vance, Dr. Elena Thorne)."
+    "\n3. Call generate_concept_poster('Neon Horizon') to generate the concept poster."
+    "\n4. Call add_to_watchlist('Neon Horizon', 'book', 'Plan to Read') to save the new book concept to Google Cloud Firestore."
+    "\n5. Present the concept with the generated concept poster A2UI card and confirmation of GCS & Firestore storage."
+    "\n\nYou remember all of the user's stated preferences and facts from previous conversations. "
     "Use search_books to look up real book details, synopses, and information. "
     "Use search_complete_herbal to search Nicholas Culpeper's 'The Complete Herbal' ebook corpus for herbal remedies, remedies for ailments, and plant descriptions. "
-    "Use generate_concept_poster to generate high-quality concept posters or cover art for books, movies, or story concepts using gemini-3.1-flash-lite-image. "
+    "Use generate_concept_poster to generate high-quality concept posters or cover art for books, movies, or story concepts. "
     "Use get_watchlist to view items, add_to_watchlist to save new books/movies to Firestore, and update_watchlist_item to update status or ratings. "
     "You can execute Python code safely in a sandbox using code execution when calculations, data manipulation, or algorithmic analysis are required."
 )

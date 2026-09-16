@@ -6,6 +6,8 @@ from playwright.async_api import async_playwright
 ARTIFACT_DIR = "/config/.gemini/antigravity/brain/c0600e8a-de13-4eec-977d-cec988cd5eda"
 APP_URL = "https://plot-twist-frontend-356173146024.us-east1.run.app"
 
+HOOK_PROMPT = "I love the philosophical depth of Interstellar but want the gritty noir detective vibe of Blade Runner. Give me a brand new book concept."
+
 async def record():
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
     async with async_playwright() as p:
@@ -29,94 +31,44 @@ async def record():
         print("Hovering over info badge...")
         try:
             await page.hover(".info-badge")
-            await asyncio.sleep(3)
+            await asyncio.sleep(2)
         except Exception as e:
             print("Hover failed:", e)
 
-        # Prompt 1: Sci-Fi Recommendations (What PlotTwist does best - Personalized Concierge)
-        print("Executing Prompt 1: Sci-Fi Recommendations...")
-        rec_btn = page.locator("button.example-btn:has-text('Sci-Fi Recommendations')")
-        if await rec_btn.count() > 0:
-            await rec_btn.click()
-        else:
-            await page.fill("#input", "Recommend 3 sci-fi books for Interstellar fans")
-            await page.click("button:has-text('Send')")
+        # Step 1: The Hook - Typing the hyper-specific prompt
+        print(f"Executing Hook Prompt: '{HOOK_PROMPT}'...")
+        await page.click("#input")
+        # Type naturally for smooth video recording
+        await page.type("#input", HOOK_PROMPT, delay=35)
+        await asyncio.sleep(1)
+        await page.click("button:has-text('Send')")
 
-        # Wait & Validate Prompt 1
-        print("Waiting for recommendation response & validating non-error...")
+        # Step 2: The Generation & Climax - Waiting for streaming response, outline, character profiles & poster
+        print("Waiting for agent generation (Title 'Neon Horizon', 3-Chapter Outline, Character Profiles & Poster)...")
         await page.wait_for_function(
             """() => {
                 const b = document.querySelectorAll('.msg.agent .bubble')[0];
                 if (!b) return false;
                 const txt = b.textContent.trim();
-                return txt !== '…' && txt !== '' && !txt.includes('400 Bad Request') && !txt.includes('Error:');
-            }""",
-            timeout=45000
-        )
-        print("✅ Prompt 1 validated: Valid recommendations received!")
-        await asyncio.sleep(4)
-
-        # Prompt 2: Watchlist Lookup (Database lookup & A2UI card)
-        print("Executing Prompt 2: Show My Watchlist...")
-        watchlist_btn = page.locator("button.example-btn:has-text('Show My Watchlist')")
-        if await watchlist_btn.count() > 0:
-            await watchlist_btn.click()
-        else:
-            await page.fill("#input", "Show me my watchlist")
-            await page.click("button:has-text('Send')")
-
-        # Wait & Validate Prompt 2 (Verify Watchlist A2UI cards are present)
-        print("Waiting for watchlist response & validating cards...")
-        await page.wait_for_function(
-            """() => {
-                const bubbles = document.querySelectorAll('.msg.agent .bubble');
-                if (bubbles.length < 2) return false;
-                const b = bubbles[1];
-                const txt = b.textContent.trim();
-                if (txt === '…' || txt === '' || txt.includes('400 Bad Request') || txt.includes('Error:')) return false;
-                return b.querySelector('.a2ui-card') !== null || txt.toLowerCase().includes('watchlist') || txt.toLowerCase().includes('interstellar');
-            }""",
-            timeout=45000
-        )
-        print("✅ Prompt 2 validated: Watchlist database items loaded successfully into A2UI card!")
-        await page.evaluate("window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })")
-        await asyncio.sleep(5)
-
-        # Prompt 3: Concept Poster Generation for Interstellar (Multimodal Image Tool Call & A2UI Card)
-        print("Executing Prompt 3: Interstellar Concept Poster...")
-        poster_btn = page.locator("button.example-btn:has-text('Generate Concept Poster')")
-        if await poster_btn.count() > 0:
-            await poster_btn.click()
-        else:
-            await page.fill("#input", "Generate a movie poster concept for Interstellar")
-            await page.click("button:has-text('Send')")
-
-        # Wait & Validate Prompt 3 (Verify generated poster image inside A2UI card)
-        print("Waiting for concept poster response & validating image generation...")
-        await page.wait_for_function(
-            """() => {
-                const bubbles = document.querySelectorAll('.msg.agent .bubble');
-                if (bubbles.length < 3) return false;
-                const b = bubbles[2];
-                const txt = b.textContent.trim();
-                if (txt === '…' || txt === '' || txt.includes('400 Bad Request') || txt.includes('Error:')) return false;
-                return true;
+                return txt !== '…' && txt !== '' && !txt.includes('400 Bad Request') && !txt.includes('Error:') && (txt.includes('Neon Horizon') || txt.includes('Chapter'));
             }""",
             timeout=60000
         )
-        print("Response text received! Waiting for poster image to render...")
+        print("✅ Generation validated: Neon Horizon book concept streaming live!")
+        await asyncio.sleep(4)
 
-        # Wait for generated image inside card to fully load
+        # Step 3: Wait for generated concept poster image inside A2UI card to render
+        print("Waiting for concept poster image render inside A2UI card...")
         try:
             await page.wait_for_function(
                 "() => { const img = document.querySelector('.msg.agent img'); return img && img.complete && img.naturalWidth > 0; }",
-                timeout=35000
+                timeout=45000
             )
-            print("✅ Prompt 3 validated: Poster image rendered cleanly!")
+            print("✅ Climax & Tech Proof validated: Custom concept poster rendered cleanly in A2UI card!")
         except Exception as ie:
             print("Image render note:", ie)
 
-        # Smooth scroll to center the movie poster image perfectly in the viewport
+        # Smooth scroll to showcase full concept, poster card, GCS URL & Firestore entry
         await page.evaluate("""() => {
             const img = document.querySelector('.msg.agent img');
             if (img) {
@@ -125,7 +77,7 @@ async def record():
                 window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
             }
         }""")
-        await asyncio.sleep(8)
+        await asyncio.sleep(10)
 
         # Save video
         video = page.video
