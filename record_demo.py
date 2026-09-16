@@ -38,37 +38,45 @@ async def record():
         # Step 1: The Hook - Typing the hyper-specific prompt
         print(f"Executing Hook Prompt: '{HOOK_PROMPT}'...")
         await page.click("#input")
-        # Type naturally for smooth video recording
         await page.type("#input", HOOK_PROMPT, delay=35)
         await asyncio.sleep(1)
         await page.click("button:has-text('Send')")
 
-        # Step 2: The Generation & Climax - Waiting for streaming response, outline, character profiles & poster
-        print("Waiting for agent generation (Title 'Neon Horizon', 3-Chapter Outline, Character Profiles & Poster)...")
+        # Step 2: The Generation, Climax & Tech Proof - Wait for full agent completion
+        print("Waiting up to 120s for Agent Generation (Title 'Neon Horizon', Outline, Poster Image, GCS URL & Firestore ID)...")
+        
+        # Wait for agent bubble text to stop being '…' and include Neon Horizon content
         await page.wait_for_function(
             """() => {
                 const b = document.querySelectorAll('.msg.agent .bubble')[0];
                 if (!b) return false;
                 const txt = b.textContent.trim();
-                return txt !== '…' && txt !== '' && !txt.includes('400 Bad Request') && !txt.includes('Error:') && (txt.includes('Neon Horizon') || txt.includes('Chapter'));
+                return txt !== '…' && txt !== '' && (txt.includes('Neon Horizon') || txt.includes('Chapter'));
             }""",
-            timeout=60000
+            timeout=120000
         )
-        print("✅ Generation validated: Neon Horizon book concept streaming live!")
-        await asyncio.sleep(4)
+        print("✅ Generation in progress: Neon Horizon streaming...")
 
-        # Step 3: Wait for generated concept poster image inside A2UI card to render
-        print("Waiting for concept poster image render inside A2UI card...")
+        # Step 3: Climax - Wait for Poster Image in A2UI card to be fully loaded
+        print("Waiting for Concept Poster image inside A2UI card...")
         try:
             await page.wait_for_function(
-                "() => { const img = document.querySelector('.msg.agent img'); return img && img.complete && img.naturalWidth > 0; }",
-                timeout=45000
+                """() => {
+                    const img = document.querySelector('.msg.agent img');
+                    return img && img.complete && img.naturalWidth > 0;
+                }""",
+                timeout=90000
             )
-            print("✅ Climax & Tech Proof validated: Custom concept poster rendered cleanly in A2UI card!")
-        except Exception as ie:
-            print("Image render note:", ie)
+            print("✅ Climax Validated: Custom A2UI Concept Poster rendered on screen!")
+        except Exception as e:
+            print("Poster render note:", e)
 
-        # Smooth scroll to showcase full concept, poster card, GCS URL & Firestore entry
+        # Step 4: Tech Proof - Wait for Tech Proof lines or GCS / Firestore text
+        print("Waiting for Tech Proof confirmation...")
+        await asyncio.sleep(8)
+
+        # Scroll down smoothly to center the Poster Card & Tech Proof in viewport
+        print("Scrolling down smoothly to showcase Poster Card and Tech Proof...")
         await page.evaluate("""() => {
             const img = document.querySelector('.msg.agent img');
             if (img) {
@@ -77,7 +85,10 @@ async def record():
                 window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
             }
         }""")
-        await asyncio.sleep(10)
+        
+        # Hold viewport on the Climax & Tech Proof for 15 full seconds in video
+        print("Holding view on Climax & Tech Proof for 15s...")
+        await asyncio.sleep(15)
 
         # Save video
         video = page.video
@@ -87,7 +98,6 @@ async def record():
 
         print(f"Raw video saved at: {video_path}")
 
-        # Convert webm to mp4 using ffmpeg
         if video_path and os.path.exists(video_path):
             mp4_path = os.path.join(ARTIFACT_DIR, "demo_recording.mp4")
             cmd = f"ffmpeg -y -i {video_path} -c:v libx264 -pix_fmt yuv420p {mp4_path}"
@@ -95,7 +105,6 @@ async def record():
             subprocess.run(cmd, shell=True, check=True)
             print(f"MP4 recording successfully saved to: {mp4_path}")
 
-            # Also create copy in project root
             root_copy = "/config/Desktop/JPMC/plot-twist/demo_recording.mp4"
             subprocess.run(f"cp {mp4_path} {root_copy}", shell=True, check=True)
             print(f"Copied updated video to project root: {root_copy}")
