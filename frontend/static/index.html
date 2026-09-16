@@ -215,11 +215,16 @@ function renderReply(b, parts) {
   
   // Extract any embedded markdown image URL or direct poster image URL
   let imgUrl = null;
-  const imgMatch = textStr.match(/!\[.*?\]\((https?:\/\/[^\s\)]+)\)/i) || textStr.match(/(https?:\/\/[^\s]+\/poster_[^\s]+\.(?:jpg|jpeg|png))/i);
-  if (imgMatch && imgMatch[1]) {
-    imgUrl = imgMatch[1];
-  } else if (imgMatch && imgMatch[0]) {
-    imgUrl = imgMatch[0];
+  const imgRegexes = [
+    /!\[.*?\]\((https?:\/\/[^\s\)]+)\)/i,
+    /(https?:\/\/storage\.googleapis\.com\/plottwist-assets-[^\s\)]+)/i,
+    /(https?:\/\/[^\s\)]+\/poster_[^\s\)]+\.(?:jpg|jpeg|png))/i,
+    /(https?:\/\/[^\s\)]+\.(?:jpg|jpeg|png))/i
+  ];
+  for (const rx of imgRegexes) {
+    const m = textStr.match(rx);
+    if (m && m[1]) { imgUrl = m[1]; break; }
+    if (m && m[0] && m[0].startsWith("http")) { imgUrl = m[0]; break; }
   }
 
   // Filter out image markdown lines and poster URLs from Card 1 text
@@ -227,7 +232,8 @@ function renderReply(b, parts) {
   const lines = textStr.split("\n");
   for (const line of lines) {
     if (!line.trim()) continue;
-    if (imgMatch && line.includes(imgMatch[0])) continue;
+    if (imgUrl && line.includes(imgUrl)) continue;
+    if (line.includes("![") && line.includes("](")) continue;
     if (line.includes("[Tech Proof]")) continue;
     if (line.toLowerCase().includes("concept poster generated successfully")) continue;
     if (line.toLowerCase().includes("public url:")) continue;
