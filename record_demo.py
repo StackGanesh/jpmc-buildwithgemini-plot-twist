@@ -17,9 +17,9 @@ async def record():
             args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
         )
         context = await browser.new_context(
-            viewport={"width": 1280, "height": 900},
+            viewport={"width": 1280, "height": 960},
             record_video_dir=ARTIFACT_DIR,
-            record_video_size={"width": 1280, "height": 900}
+            record_video_size={"width": 1280, "height": 960}
         )
         page = await context.new_page()
 
@@ -42,10 +42,8 @@ async def record():
         await asyncio.sleep(1)
         await page.click("button:has-text('Send')")
 
-        # Step 2: The Generation, Climax & Tech Proof - Wait for full agent completion
-        print("Waiting up to 120s for Agent Generation (Title 'Neon Horizon', Outline, Poster Image, GCS URL & Firestore ID)...")
-        
-        # Wait for agent bubble text to stop being '…' and include Neon Horizon content
+        # Step 2: The Generation & Climax - Wait for full agent completion
+        print("Waiting up to 120s for Agent Generation (Title 'Neon Horizon', Outline, Poster Image)...")
         await page.wait_for_function(
             """() => {
                 const b = document.querySelectorAll('.msg.agent .bubble')[0];
@@ -57,8 +55,8 @@ async def record():
         )
         print("✅ Generation in progress: Neon Horizon streaming...")
 
-        # Step 3: Climax - Wait for Poster Image in A2UI card to be fully loaded
-        print("Waiting for Concept Poster image inside A2UI card...")
+        # Step 3: Wait for Concept Poster image to render
+        print("Waiting for Concept Poster image...")
         try:
             await page.wait_for_function(
                 """() => {
@@ -67,27 +65,23 @@ async def record():
                 }""",
                 timeout=90000
             )
-            print("✅ Climax Validated: Custom A2UI Concept Poster rendered on screen!")
+            print("✅ Climax Validated: Custom Concept Poster rendered on screen!")
         except Exception as e:
             print("Poster render note:", e)
 
-        # Step 4: Tech Proof - Wait for Tech Proof lines or GCS / Firestore text
-        print("Waiting for Tech Proof confirmation...")
-        await asyncio.sleep(8)
+        await asyncio.sleep(3)
 
-        # Scroll down smoothly to center the Poster Card & Tech Proof in viewport
-        print("Scrolling down smoothly to showcase Poster Card and Tech Proof...")
+        # Position viewport so that the top of the message bubble (Book Title "Neon Horizon") AND poster card are fully visible
+        print("Positioning viewport to ensure book title and poster card are both visible...")
         await page.evaluate("""() => {
-            const img = document.querySelector('.msg.agent img');
-            if (img) {
-                img.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            const agentMsg = document.querySelector('.msg.agent');
+            if (agentMsg) {
+                agentMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }""")
         
-        # Hold viewport on the Climax & Tech Proof for 15 full seconds in video
-        print("Holding view on Climax & Tech Proof for 15s...")
+        # Hold viewport for 15 full seconds in video
+        print("Holding view on complete book concept & poster card for 15s...")
         await asyncio.sleep(15)
 
         # Save video

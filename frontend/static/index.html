@@ -42,7 +42,7 @@
   .a2text.a2-h4 { font-size:1rem; font-weight:600; }
   .a2text.a2-caption { font-size:.85rem; color:#666; }
   .a2divider { border:none; border-top:1px solid var(--border); margin:.4rem 0; width:100%; }
-  .a2img { max-width:100%; max-height:540px; width:auto; border-radius:10px; display:block; margin:0.6rem auto; object-fit:contain; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+  .a2img { max-width:100%; max-height:320px; width:auto; border-radius:10px; display:block; margin:0.6rem auto; object-fit:contain; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
   .material-symbols-outlined { font-family:'Material Symbols Outlined'; font-size:1.25rem; line-height:1; vertical-align:middle; color:var(--accent); }
   
   .examples { display:flex; gap:0.5rem; padding:0.6rem 1rem 0.2rem; max-width:780px; width:100%; margin:0 auto; flex-wrap:wrap; justify-content:center; }
@@ -230,13 +230,9 @@ function renderReply(b, parts) {
       // Skip raw markdown image line if extracted
       if (imgMatch && line.includes(imgMatch[0])) continue;
 
-      if (line.includes("[Tech Proof]")) {
-        const badge = el("div", "tech-proof-badge", line.trim());
-        textContainer.appendChild(badge);
-      } else {
-        const lineEl = el("div", "line-text", line.trim());
-        textContainer.appendChild(lineEl);
-      }
+      if (line.includes("[Tech Proof]")) continue;
+      const lineEl = el("div", "line-text", line.trim());
+      textContainer.appendChild(lineEl);
     }
     b.appendChild(textContainer);
 
