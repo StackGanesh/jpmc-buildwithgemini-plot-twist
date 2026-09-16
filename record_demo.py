@@ -42,8 +42,8 @@ async def record():
         await asyncio.sleep(1)
         await page.click("button:has-text('Send')")
 
-        # Step 2: The Generation & Climax - Wait for full agent completion
-        print("Waiting up to 120s for Agent Generation (Title 'Neon Horizon', Outline, Poster Image)...")
+        # Step 2: The Generation - Wait for Card 1 (Title 'Neon Horizon', Outline, Profiles)
+        print("Waiting for Card 1 (Book Concept Title 'Neon Horizon')...")
         await page.wait_for_function(
             """() => {
                 const b = document.querySelectorAll('.msg.agent .bubble')[0];
@@ -53,36 +53,49 @@ async def record():
             }""",
             timeout=120000
         )
-        print("✅ Generation in progress: Neon Horizon streaming...")
+        print("✅ Card 1 Validated: Book Concept streaming...")
 
-        # Step 3: Wait for Concept Poster image to render
-        print("Waiting for Concept Poster image...")
+        # Step 3: The Climax - Wait for Card 2 (Concept Poster Art image)
+        print("Waiting for Card 2 (Concept Poster Art)...")
         try:
             await page.wait_for_function(
                 """() => {
-                    const img = document.querySelector('.msg.agent img');
-                    return img && img.complete && img.naturalWidth > 0;
+                    const imgs = document.querySelectorAll('.msg.agent img');
+                    for (const img of imgs) {
+                        if (img && img.complete && img.naturalWidth > 0) return true;
+                    }
+                    return false;
                 }""",
                 timeout=90000
             )
-            print("✅ Climax Validated: Custom Concept Poster rendered on screen!")
+            print("✅ Card 2 Validated: Concept Poster Art rendered as a separate card!")
         except Exception as e:
             print("Poster render note:", e)
 
-        await asyncio.sleep(3)
+        await asyncio.sleep(2)
 
-        # Position viewport so that the top of the message bubble (Book Title "Neon Horizon") AND poster card are fully visible
-        print("Positioning viewport to ensure book title and poster card are both visible...")
+        # Viewport showcase:
+        # First, scroll to Card 1 (Book Concept)
+        print("Scrolling to Card 1 (Book Concept Title, Outline, Character Profiles)...")
         await page.evaluate("""() => {
-            const agentMsg = document.querySelector('.msg.agent');
-            if (agentMsg) {
-                agentMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const agentMsgs = document.querySelectorAll('.msg.agent');
+            if (agentMsgs.length > 0) {
+                agentMsgs[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }""")
-        
-        # Hold viewport for 15 full seconds in video
-        print("Holding view on complete book concept & poster card for 15s...")
-        await asyncio.sleep(15)
+        await asyncio.sleep(6)
+
+        # Second, scroll to Card 2 (Concept Poster Art)
+        print("Scrolling to Card 2 (Concept Poster Art)...")
+        await page.evaluate("""() => {
+            const agentMsgs = document.querySelectorAll('.msg.agent');
+            if (agentMsgs.length > 1) {
+                agentMsgs[1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (agentMsgs.length > 0) {
+                agentMsgs[0].scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+        }""")
+        await asyncio.sleep(10)
 
         # Save video
         video = page.video
