@@ -182,7 +182,7 @@ base_instruction = (
     "DO NOT mention or reference Frozen, Frozen Storybook, Olaf, or Sven unless explicitly requested in the user's current message."
     "\n\nWhen the user asks for a brand new book concept blending Interstellar and Blade Runner (or similar sci-fi noir prompt):"
     "\n1. Title the book 'Neon Horizon'."
-    "\n2. Provide a concise 3-Chapter Outline (Chapter 1: The Event Horizon Case, Chapter 2: Echoes in Neon, Chapter 3: Singularity Noir) and brief Character Profiles (e.g. Detective Jax Vance, Dr. Elena Thorne)."
+    "\n2. Provide a well-proportioned 3-Chapter Outline (Chapter 1: The Event Horizon Case, Chapter 2: Echoes in Neon, Chapter 3: Singularity Noir) with 2 to 3 engaging, well-paced sentences per chapter (neither too brief nor overly verbose), and brief Character Profiles (Detective Jax Vance, Dr. Elena Thorne)."
     "\n3. Call generate_concept_poster('Neon Horizon') to generate the concept poster."
     "\n4. Call add_to_watchlist('Neon Horizon', 'book', 'Plan to Read') to save the new book concept to Google Cloud Firestore."
     "\n5. Present the book concept cleanly, and ALWAYS include the generated poster image markdown link ![Concept Poster](URL) from the tool response."
