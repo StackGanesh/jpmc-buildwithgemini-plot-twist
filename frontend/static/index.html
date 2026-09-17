@@ -42,7 +42,58 @@
   .a2text.a2-h4 { font-size:1rem; font-weight:600; }
   .a2text.a2-caption { font-size:.85rem; color:#666; }
   .a2divider { border:none; border-top:1px solid var(--border); margin:.4rem 0; width:100%; }
-  .a2img { max-width:100%; max-height:320px; width:auto; border-radius:10px; display:block; margin:0.6rem auto; object-fit:contain; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+  .poster-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important;
+    border: 1px solid rgba(99, 102, 241, 0.35) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 25px rgba(99, 102, 241, 0.2) !important;
+    border-radius: 16px !important;
+    padding: 1.25rem !important;
+    margin-top: 0.8rem !important;
+    color: #f8fafc !important;
+  }
+  .poster-title {
+    color: #e0e7ff !important;
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.8rem !important;
+    text-shadow: 0 0 12px rgba(99, 102, 241, 0.6) !important;
+  }
+  .a2img {
+    width: 100% !important;
+    max-width: 640px !important;
+    max-height: 640px !important;
+    border-radius: 12px !important;
+    display: block !important;
+    margin: 0.8rem auto !important;
+    object-fit: contain !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+    transition: transform 0.25s ease !important;
+  }
+  .a2img:hover { transform: scale(1.02); }
+  .poster-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.8rem;
+    padding: 0.55rem 1.1rem;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #fff !important;
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    transition: all 0.2s ease;
+  }
+  .poster-btn:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  }
   .material-symbols-outlined { font-family:'Material Symbols Outlined'; font-size:1.25rem; line-height:1; vertical-align:middle; color:var(--accent); }
   
   .examples { display:flex; gap:0.5rem; padding:0.6rem 1rem 0.2rem; max-width:780px; width:100%; margin:0 auto; flex-wrap:wrap; justify-content:center; }
@@ -213,7 +264,7 @@ function renderReply(b, parts) {
 
   const textStr = texts.join("\n").trim();
   
-  // Extract any embedded markdown image URL or direct poster image URL
+  // Extract image URL from text or A2UI
   let imgUrl = null;
   const imgRegexes = [
     /!\[.*?\]\((https?:\/\/[^\s\)]+)\)/i,
@@ -227,49 +278,84 @@ function renderReply(b, parts) {
     if (m && m[0] && m[0].startsWith("http")) { imgUrl = m[0]; break; }
   }
 
-  // Filter out image markdown lines and poster URLs from Card 1 text
-  const conceptLines = [];
-  const lines = textStr.split("\n");
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    if (imgUrl && line.includes(imgUrl)) continue;
-    if (line.includes("![") && line.includes("](")) continue;
-    if (line.includes("[Tech Proof]")) continue;
-    if (line.toLowerCase().includes("concept poster generated successfully")) continue;
-    if (line.toLowerCase().includes("public url:")) continue;
-    conceptLines.push(line.trim());
-  }
-
-  // CARD 1: Book Concept Details (Title, Chapter Outline, Character Profiles)
-  if (conceptLines.length > 0) {
-    const textContainer = el("div", "text-body");
-    for (const line of conceptLines) {
-      textContainer.appendChild(el("div", "line-text", line));
+  // Also check A2UI for any Image component URL
+  let a2uiCard1 = null;
+  if (a2ui.length > 0) {
+    a2uiCard1 = JSON.parse(JSON.stringify(a2ui));
+    for (const msg of a2uiCard1) {
+      const su = msg.surfaceUpdate;
+      if (su && Array.isArray(su.components)) {
+        const imageCompIds = new Set();
+        for (const c of su.components) {
+          if (c && c.component && c.component.Image) {
+            imageCompIds.add(c.id);
+            if (!imgUrl && c.component.Image.url) {
+              imgUrl = boundStr(c.component.Image.url);
+            }
+          }
+        }
+        if (imageCompIds.size > 0) {
+          // Filter out Image components from Card 1
+          su.components = su.components.filter(c => !imageCompIds.has(c.id));
+          // Remove Image component IDs from Column/Row children lists
+          for (const c of su.components) {
+            const spec = c.component && c.component[Object.keys(c.component)[0]];
+            if (spec && spec.children && Array.isArray(spec.children.explicitList)) {
+              spec.children.explicitList = spec.children.explicitList.filter(id => !imageCompIds.has(id));
+            }
+          }
+        }
+      }
     }
-    b.appendChild(textContainer);
   }
 
-  // CARD 2: Concept Poster Art as a SEPARATE Card
-  if (imgUrl || a2ui.length) {
-    // If Card 1 already has content, create a separate Card 2 bubble for the poster
+  // CARD 1: Render A2UI or Plain Text Details
+  b.classList.add("rich");
+  let card1Rendered = false;
+  if (a2uiCard1) {
+    card1Rendered = renderSurface(a2uiCard1, b);
+  }
+
+  if (!card1Rendered) {
+    const conceptLines = [];
+    const lines = textStr.split("\n");
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      if (imgUrl && line.includes(imgUrl)) continue;
+      if (line.includes("![") && line.includes("](")) continue;
+      if (line.includes("[Tech Proof]")) continue;
+      if (line.toLowerCase().includes("concept poster generated successfully")) continue;
+      if (line.toLowerCase().includes("public url:")) continue;
+      conceptLines.push(line.trim());
+    }
+    if (conceptLines.length > 0) {
+      const textContainer = el("div", "text-body");
+      for (const line of conceptLines) {
+        textContainer.appendChild(el("div", "line-text", line));
+      }
+      b.appendChild(textContainer);
+      card1Rendered = true;
+    }
+  }
+
+  // CARD 2: Separate Concept Poster Art Card
+  if (imgUrl) {
     const posterBubble = (b.childNodes.length > 0) ? bubble("agent") : b;
     if (posterBubble !== b) posterBubble.textContent = "";
 
-    posterBubble.classList.add("rich");
-    posterBubble.appendChild(el("div", "a2text a2-h3", "🎨 Concept Poster Art"));
+    posterBubble.classList.add("rich", "poster-card");
+    posterBubble.appendChild(el("div", "poster-title", "✨ CONCEPT POSTER ART"));
 
-    if (a2ui.length) {
-      if (!renderSurface(a2ui, posterBubble)) {
-        posterBubble.appendChild(el("div", null, flattenText(a2ui) || ""));
-      }
-    }
+    const img = el("img", "a2img");
+    img.src = imgUrl;
+    img.alt = "Generated Concept Poster Art";
+    posterBubble.appendChild(img);
 
-    if (imgUrl) {
-      const img = el("img", "a2img");
-      img.src = imgUrl;
-      img.alt = "Generated Concept Poster Art";
-      posterBubble.appendChild(img);
-    }
+    const btn = el("a", "poster-btn");
+    btn.href = imgUrl;
+    btn.target = "_blank";
+    btn.innerHTML = "🔗 Open High-Res Poster (Cloud Storage)";
+    posterBubble.appendChild(btn);
   }
 
   if (!b.childNodes.length) b.textContent = "(no response)";

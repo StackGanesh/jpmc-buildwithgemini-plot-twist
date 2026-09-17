@@ -112,33 +112,94 @@ def _generate_poster_image(title_text: str, full_prompt: str = "") -> bytes:
         draw.polygon([(0, 1200), (300, 750), (800, 1200)], fill=(15, 45, 80))
         draw.polygon([(150, 1200), (550, 700), (800, 1200)], fill=(30, 80, 140))
 
-    else:  # Cyberpunk / Neon
+    else:  # Cyberpunk / Neon / Sci-Fi Noir (Blade Runner x Interstellar)
+        # Deep night city gradient: Midnight Obsidian -> Deep Violet -> Neon Magenta -> Cyber Cyan
         for y in range(height):
             ratio = y / height
-            r = int(20 * (1 - ratio) + 120 * ratio)
-            g = int(10 * (1 - ratio) + 20 * ratio)
-            b = int(40 * (1 - ratio) + 160 * ratio)
+            if ratio < 0.5:
+                r = int(10 * (1 - ratio * 2) + 60 * (ratio * 2))
+                g = int(5 * (1 - ratio * 2) + 15 * (ratio * 2))
+                b = int(25 * (1 - ratio * 2) + 120 * (ratio * 2))
+            elif ratio < 0.7:
+                sub_r = (ratio - 0.5) / 0.2
+                r = int(60 * (1 - sub_r) + 210 * sub_r)
+                g = int(15 * (1 - sub_r) + 30 * sub_r)
+                b = int(120 * (1 - sub_r) + 180 * sub_r)
+            else:
+                sub_r = (ratio - 0.7) / 0.3
+                r = int(210 * (1 - sub_r) + 20 * sub_r)
+                g = int(30 * (1 - sub_r) + 180 * sub_r)
+                b = int(180 * (1 - sub_r) + 220 * sub_r)
             draw.line([(0, y), (width, y)], fill=(r, g, b))
 
-        draw.polygon([(0, 1200), (200, 800), (800, 1200)], fill=(20, 10, 40))
+        # Concentric Glowing Synthwave Sun / Event Horizon Disc
+        center_x, center_y = 400, 540
+        for radius in range(220, 0, -3):
+            fill_r = int(255 * (1 - radius / 220) + 220 * (radius / 220))
+            fill_g = int(230 * (1 - radius / 220) + 20 * (radius / 220))
+            fill_b = int(80 * (1 - radius / 220) + 160 * (radius / 220))
+            draw.ellipse([center_x - radius, center_y - radius, center_x + radius, center_y + radius], fill=(fill_r, fill_g, fill_b))
+
+        # Silhouetted Blade Runner Mega-Skyscrapers with glowing neon window grids
+        buildings = [
+            (0, 480, 110, 800),
+            (90, 420, 200, 800),
+            (180, 510, 270, 800),
+            (250, 360, 360, 800),
+            (340, 450, 430, 800),
+            (420, 380, 530, 800),
+            (510, 490, 610, 800),
+            (590, 400, 710, 800),
+            (680, 460, 800, 800),
+        ]
+        for bx1, by1, bx2, by2 in buildings:
+            draw.rectangle([bx1, by1, bx2, by2], fill=(8, 6, 20))
+            # Glowing windows
+            rng_b = random.Random(bx1 + by1)
+            for wx in range(bx1 + 10, bx2 - 10, 15):
+                for wy in range(by1 + 20, by2 - 40, 25):
+                    if rng_b.random() > 0.4:
+                        w_color = (0, 240, 255) if rng_b.random() > 0.5 else (255, 0, 180)
+                        draw.rectangle([wx, wy, wx + 6, wy + 12], fill=w_color)
+
+        # Perspective Cyber Grid on wet highway surface (y = 780 to 1200)
+        grid_y_start = 760
+        draw.rectangle([0, grid_y_start, width, height], fill=(12, 10, 28))
+        # Horizontal perspective grid lines
+        for step in range(1, 18):
+            gy = grid_y_start + int(math.pow(step / 18, 2.2) * (height - grid_y_start))
+            draw.line([(0, gy), (width, gy)], fill=(0, 210, 255), width=1)
+        # Radial grid lines
+        for x_ratio in [0.0, 0.15, 0.3, 0.42, 0.5, 0.58, 0.7, 0.85, 1.0]:
+            x_top = int(400 + (x_ratio - 0.5) * 200)
+            x_bot = int(400 + (x_ratio - 0.5) * 1100)
+            draw.line([(x_top, grid_y_start), (x_bot, height)], fill=(255, 0, 180), width=2)
+
+        # Rain streaks / Cyber Neon reflection
+        rng_r = random.Random(99)
+        for _ in range(80):
+            rx = rng_r.randint(0, width)
+            ry = rng_r.randint(100, height)
+            rlen = rng_r.randint(15, 45)
+            draw.line([(rx, ry), (rx - 5, ry + rlen)], fill=(180, 230, 255, 120), width=1)
 
     # Top header
-    draw.text((width // 2, 110), "A PLOT TWIST ORIGINAL CONCEPT", fill=(240, 230, 255), font=font_header, anchor="mm")
-    draw.text((width // 2, 150), "— CONCEPT ARTWORK SERIES —", fill=(255, 210, 130), font=font_footer, anchor="mm")
+    draw.text((width // 2, 105), "A PLOT TWIST ORIGINAL CONCEPT", fill=(240, 230, 255), font=font_header, anchor="mm")
+    draw.text((width // 2, 145), "— CINEMATIC CONCEPT ARTWORK SERIES —", fill=(0, 240, 255), font=font_footer, anchor="mm")
 
     # Drop shadow for Title
-    shadow_offset = 4
+    shadow_offset = 5
     for dx in range(-shadow_offset, shadow_offset + 1):
         for dy in range(-shadow_offset, shadow_offset + 1):
             if dx != 0 or dy != 0:
-                draw.text((width // 2 + dx, 270 + dy), clean_title, fill=(5, 5, 10), font=font_title, anchor="mm")
+                draw.text((width // 2 + dx, 260 + dy), clean_title, fill=(255, 0, 180), font=font_title, anchor="mm")
 
     # Title text
-    draw.text((width // 2, 270), clean_title, fill=(255, 250, 235), font=font_title, anchor="mm")
+    draw.text((width // 2, 260), clean_title, fill=(255, 255, 255), font=font_title, anchor="mm")
 
     # Subtitle footer
-    draw.text((width // 2, 1080), "DIRECTED BY CINEMATIC AI • VISUAL STORYTELLING", fill=(255, 235, 200), font=font_footer, anchor="mm")
-    draw.text((width // 2, 1120), "PLOTTWIST CONCIERGE • ALL RIGHTS RESERVED", fill=(220, 200, 170), font=font_footer, anchor="mm")
+    draw.text((width // 2, 1075), "BLADE RUNNER SCI-FI NOIR × INTERSTELLAR COSMIC DEPTH", fill=(0, 240, 255), font=font_footer, anchor="mm")
+    draw.text((width // 2, 1115), "PLOTTWIST CONCIERGE • POWERED BY GOOGLE GENAI", fill=(220, 210, 255), font=font_footer, anchor="mm")
 
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=95)
