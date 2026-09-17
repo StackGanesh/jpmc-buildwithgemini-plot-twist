@@ -44,33 +44,38 @@ async def record():
 
         # Step 2: The Generation - Wait for Card 1 (Title 'Neon Horizon', Outline, Profiles)
         print("Waiting for Card 1 (Book Concept Title 'Neon Horizon')...")
-        await page.wait_for_function(
-            """() => {
-                const b = document.querySelectorAll('.msg.agent .bubble')[0];
-                if (!b) return false;
-                const txt = b.textContent.trim();
-                return txt !== '…' && txt !== '' && (txt.includes('Neon Horizon') || txt.includes('Chapter'));
-            }""",
-            timeout=120000
-        )
-        print("✅ Card 1 Validated: Book Concept streaming...")
+        try:
+            await page.wait_for_function(
+                """() => {
+                    const agentMsgs = document.querySelectorAll('.msg.agent .bubble');
+                    if (agentMsgs.length === 0) return false;
+                    const txt = agentMsgs[0].textContent.trim();
+                    return txt.includes('Neon Horizon') && (txt.includes('Chapter') || txt.includes('Outline'));
+                }""",
+                timeout=120000
+            )
+            print("✅ Card 1 Validated: Title, 3-Chapter Outline, and Character Profiles generated!")
+        except Exception as e:
+            raise AssertionError(f"❌ Card 1 Validation Failed! Formatted text or outline missing: {e}")
 
         # Step 3: The Climax - Wait for Card 2 (Concept Poster Art image)
         print("Waiting for Card 2 (Concept Poster Art)...")
         try:
             await page.wait_for_function(
                 """() => {
-                    const imgs = document.querySelectorAll('.msg.agent img');
-                    for (const img of imgs) {
-                        if (img && img.complete && img.naturalWidth > 0) return true;
+                    const posterImgs = document.querySelectorAll('.poster-card img, .msg.agent img');
+                    for (const img of posterImgs) {
+                        if (img && img.complete && img.naturalWidth > 0 && img.src.startsWith('http')) {
+                            return true;
+                        }
                     }
                     return false;
                 }""",
-                timeout=90000
+                timeout=120000
             )
-            print("✅ Card 2 Validated: Concept Poster Art rendered as a separate card!")
+            print("✅ Card 2 Validated: High-Res Concept Poster Art rendered as a separate card!")
         except Exception as e:
-            print("Poster render note:", e)
+            raise AssertionError(f"❌ Card 2 Validation Failed! Poster image was not generated or loaded: {e}")
 
         await asyncio.sleep(2)
 

@@ -270,6 +270,7 @@ function renderReply(b, parts) {
   let imgUrl = null;
   const imgRegexes = [
     /!\[.*?\]\((https?:\/\/[^\s\)]+)\)/i,
+    /(https?:\/\/storage\.googleapis\.com\/[^\s\)]+\.(?:png|jpg|jpeg))/i,
     /(https?:\/\/storage\.googleapis\.com\/plottwist-assets-[^\s\)]+)/i,
     /(https?:\/\/[^\s\)]+\/poster_[^\s\)]+\.(?:jpg|jpeg|png))/i,
     /(https?:\/\/[^\s\)]+\.(?:jpg|jpeg|png))/i
@@ -280,7 +281,7 @@ function renderReply(b, parts) {
     if (m && m[0] && m[0].startsWith("http")) { imgUrl = m[0]; break; }
   }
 
-  // Also check A2UI for any Image component URL
+  // Also check A2UI for any Image component URL or deep JSON URL string
   let a2uiCard1 = null;
   if (a2ui.length > 0) {
     a2uiCard1 = JSON.parse(JSON.stringify(a2ui));
@@ -289,10 +290,12 @@ function renderReply(b, parts) {
       if (su && Array.isArray(su.components)) {
         const imageCompIds = new Set();
         for (const c of su.components) {
-          if (c && c.component && c.component.Image) {
+          if (c && c.component && (c.component.Image || c.component.image)) {
             imageCompIds.add(c.id);
-            if (!imgUrl && c.component.Image.url) {
-              imgUrl = boundStr(c.component.Image.url);
+            if (!imgUrl) {
+              const imgSpec = c.component.Image || c.component.image;
+              const urlVal = imgSpec.url || imgSpec.src || imgSpec.imageUrl || imgSpec;
+              imgUrl = boundStr(urlVal);
             }
           }
         }
@@ -308,6 +311,16 @@ function renderReply(b, parts) {
           }
         }
       }
+    }
+  }
+
+  // Final fallback: deep scan a2ui JSON string if imgUrl is still missing
+  if (!imgUrl && a2ui.length > 0) {
+    const jsonStr = JSON.stringify(a2ui);
+    for (const rx of imgRegexes) {
+      const m = jsonStr.match(rx);
+      if (m && m[1]) { imgUrl = m[1]; break; }
+      if (m && m[0] && m[0].startsWith("http")) { imgUrl = m[0]; break; }
     }
   }
 
